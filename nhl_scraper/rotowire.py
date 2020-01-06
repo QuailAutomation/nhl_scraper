@@ -87,7 +87,7 @@ class Scraper:
         #                             columns[2]: player_name,
         #                             columns[3]: position})
         # return pd.DataFrame(data=all_players, columns=columns)
-        pass
+        return return_value
 
 if __name__ == "__main__":
     scraper = Scraper()
