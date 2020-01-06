@@ -1,3 +1,5 @@
 objectpath==0.6.1
 pandas==0.25.1
 requests==2.22.0
+beautifulsoup4
+lxml
