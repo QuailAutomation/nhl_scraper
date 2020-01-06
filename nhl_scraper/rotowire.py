@@ -48,11 +48,12 @@ class Scraper:
         soup = BeautifulSoup(self.goalies_cache, 'html.parser')
         starter_data = soup.findAll("div", {'class': 'starters-matrix'})
         tds = starter_data[0].findAll("div", {'class': 'flex-row'})
-        searchable_data = {}
+        searchable_data = []
+
         for i in range(1, len(tds)):
             team = tds[i].find('div', {'class': 'proj-team'}).text.strip()
             team_info = {}
-            searchable_data[team] = team_info
+            # searchable_data[team] = team_info
             days = tds[i].findAll('div', {'class': 'goalies-row'})
             for week_index in range(0,len(days)):
                 each_day = days[week_index].findAll('div', {'class': 'goalie-item'})
@@ -66,15 +67,17 @@ class Scraper:
                             game_info = child.findAll('div', {'class': 'sm-text'})
                             opponent = game_info[0].text[-3:]
                             status = game_info[1].text
-                            team_info[today + timedelta(days=day_index)] = {'goalie_name': goalie_name, 'opponent': opponent, 'status': status}
-
+                            #team_info[today + timedelta(days=day_index)] = {'goalie_name': goalie_name, 'opponent': opponent, 'status': status}
+                            searchable_data.append([today + timedelta(days=day_index),goalie_name,opponent,status])
+                            # return_value.append([today + timedelta(days=day_index),goalie_name,opponent,status])
             # row = tds[i].find tds[i].get('class') == ['attrLabels']:
             #     key = tds[i].text.strip().strip(":")
             #     value = tds[i + 1].span.text
             #     searchable_data[key] = value
+        return_value = pd.DataFrame(searchable_data,columns=['date', 'goalie_name', 'opponent_team', 'status'])
         columns = ["opponent", "date", "goalie_name", "status"]
         # return_value = pd.DataFrame(searchable_data.items(),columns=columns)
-        return_value = pd.concat({k: pd.DataFrame(v).T for k, v in searchable_data.items()}, axis=0)
+        # return_value = pd.append({k: pd.DataFrame(v).T for k, v in searchable_data.items()}, axis=0)
         # all_players = []
         # for team in self.players_cache["teams"]:
         #     team_id = team["id"]
