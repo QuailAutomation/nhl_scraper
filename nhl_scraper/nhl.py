@@ -29,16 +29,19 @@ class EndpointAdapter:
     def teams_endpoint(self):
         return self.get("teams")
 
-    def schedule_endpoint(self, date):
-        return self.get("schedule?date={}".format(date.strftime("%Y-%m-%d")))
+    def schedule_endpoint(self, **params):
+        parameters = "schedule?"
+        for paramater in params.keys():
+            parameters = parameters + f"&{paramater}={{{paramater}}}"
+        get_url = parameters.format(**params)
+        return self.get(get_url)
 
     def players_endpoint(self, team_ids):
         team_str = ",".join(str(n) for n in team_ids)
         return self.get("teams?teamId={}&expand=team.roster".format(team_str))
 
-    def boxscore_endpoint(self, game_ids):
-        for n in game_ids:
-            return self.get("game/{}/boxscore".format(n))
+    def boxscore_endpoint(self, game_id):
+        return self.get("game/{}/boxscore".format(game_id))
 
 
 class Scraper:
@@ -163,7 +166,7 @@ class Scraper:
 
     def _teams_playing_one_day(self, date):
         if date not in self.schedule_cache:
-            r = self.ea.schedule_endpoint(date)
+            r = self.ea.schedule_endpoint(date=date)
             t = objectpath.Tree(r)
             data = t.execute("$..dates[0]..games.teams..(id)")
             self.schedule_cache[date] = []
@@ -171,42 +174,70 @@ class Scraper:
                 self.schedule_cache[date].append(team["id"])
         return self.schedule_cache[date]
 
-    def box_scores(self, game_ids, team_id=None, date_range=None):
-        columns = ['name', 'team_id', 'id']
-        player_stats = ['goals', 'assists', 'so', 'shots', 'saves','pim','decision','hits','toi','fw','+/-']
-        player_dict = []
-        r = self.ea.boxscore_endpoint(game_ids)
-        for team in r['teams'].values():
-            players = team['players'].values()
-            for player in players:
-                player_info = {}
-                player_info['name'] = player['person']['fullName']
-                player_info['id'] = player['person']['id']
-                player_info['team_id'] = team['team']['id']
-                if player['position']['code'] == 'G':
-                    the_stats = player['stats']['goalieStats']
-                    player_info[player_stats[0]] = the_stats['goals']
-                    player_info[player_stats[1]] = the_stats['assists']
-                    player_info[player_stats[2]] = "not implemented"
-                    player_info[player_stats[3]] = the_stats['shots']
-                    player_info[player_stats[4]] = the_stats["saves"]
-                    player_info[player_stats[5]] = the_stats['pim']
-                    player_info[player_stats[6]] = the_stats['decision']
-                    player_info[player_stats[8]] = the_stats['timeOnIce']
-                    player_dict.append(player_info)
-                elif player['position']['code'] in ['C','LW','RW','D']:
-                    the_stats = player['stats']['skaterStats']
-                    player_info[player_stats[0]] = the_stats['goals']
-                    player_info[player_stats[1]] = the_stats['assists']
-                    player_info[player_stats[3]] = the_stats['shots']
-                    player_info[player_stats[5]] = the_stats['penaltyMinutes']
-                    player_info[player_stats[7]] = the_stats['hits']
-                    player_info[player_stats[8]] = the_stats['timeOnIce']
-                    player_info[player_stats[9]] = the_stats['faceOffWins']
-                    player_info[player_stats[10]] = the_stats['plusMinus']
-                    player_dict.append(player_info)
-        game_df = pd.DataFrame(player_dict,columns=columns + player_stats)
-        pass
-        # data = t.execute("$..dates[0]..games.teams..(id)")
+    def box_scores(self, game_id, team_id=None, date_range=None, format='pandas'):
+        if format == 'json':
+            return self.ea.boxscore_endpoint(game_id)
+        elif format == 'pandas':
+            columns = ['name', 'team_id', 'id']
+            player_stats = ['goals', 'assists', 'so', 'shots', 'saves','pim','decision','hits','toi','fw','+/-']
+            player_dict = []
+            r = self.ea.boxscore_endpoint(game_id)
+            for team in r['teams'].values():
+                players = team['players'].values()
+                for player in players:
+                    player_info = {}
+                    player_info['name'] = player['person']['fullName']
+                    player_info['id'] = player['person']['id']
+                    player_info['team_id'] = team['team']['id']
+                    if player['position']['code'] == 'G':
+                        the_stats = player['stats']['goalieStats']
+                        player_info[player_stats[0]] = the_stats['goals']
+                        player_info[player_stats[1]] = the_stats['assists']
+                        player_info[player_stats[2]] = "not implemented"
+                        player_info[player_stats[3]] = the_stats['shots']
+                        player_info[player_stats[4]] = the_stats["saves"]
+                        player_info[player_stats[5]] = the_stats['pim']
+                        player_info[player_stats[6]] = the_stats['decision']
+                        player_info[player_stats[8]] = the_stats['timeOnIce']
+                        player_dict.append(player_info)
+                    elif player['position']['code'] in ['C','LW','RW','D']:
+                        the_stats = player['stats']['skaterStats']
+                        player_info[player_stats[0]] = the_stats['goals']
+                        player_info[player_stats[1]] = the_stats['assists']
+                        player_info[player_stats[3]] = the_stats['shots']
+                        player_info[player_stats[5]] = the_stats['penaltyMinutes']
+                        player_info[player_stats[7]] = the_stats['hits']
+                        player_info[player_stats[8]] = the_stats['timeOnIce']
+                        player_info[player_stats[9]] = the_stats['faceOffWins']
+                        player_info[player_stats[10]] = the_stats['plusMinus']
+                        player_dict.append(player_info)
+            game_df = pd.DataFrame(player_dict,columns=columns + player_stats)
+            pass
+            # data = t.execute("$..dates[0]..games.teams..(id)")
 
-        print(game_df.head(100))
+            print(game_df.head(100))
+            return game_df
+        else:
+            raise ValueError("Supported formats are: pandas,json")
+
+    def games(self, /, start_date, end_date):
+        the_games = self._raw_games(startDate=start_date, endDate=end_date)
+        t = objectpath.Tree(the_games)
+        data = t.execute("$..dates..games.gamePk")
+        return list(data)
+
+    def linescores(self, /,start_date, end_date):
+        the_games = self._raw_games(startDate=start_date, endDate=end_date,expand='schedule.linescore')
+        t = objectpath.Tree(the_games)
+        data = t.execute("$..dates..games")
+        return list(data)
+
+    def box_scores2(self,start_date, end_date):
+        the_games = self.games(start_date, end_date)
+        return self.box_scores(the_games)
+        # t = objectpath.Tree(the_games)
+        # data = t.execute("$..dates..games")
+        # return list(data)
+
+    def _raw_games(self, **params):
+        return self.ea.schedule_endpoint(**params)

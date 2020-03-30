@@ -65,8 +65,8 @@ class Scraper:
                             status = game_info[1].text
                             searchable_data.append([today + timedelta(days=day_index),goalie_name,opponent,status])
 
-        return_value = pd.DataFrame(searchable_data,columns=['date', 'goalie_name', 'opponent_team', 'starting_status'])
-        return_value.set_index('goalie_name', inplace=True)
+        return_value = pd.DataFrame(searchable_data,columns=['date', 'name', 'opponent_team', 'starting_status'])
+        return_value.set_index('name', inplace=True)
         return_value.sort_index(inplace=True)
         return return_value
 
