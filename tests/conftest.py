@@ -2,7 +2,7 @@
 
 import pytest
 from nhl_scraper import nhl
-import mock_nhl
+import tests.mock_nhl as mock_nhl
 import datetime
     
 
@@ -20,4 +20,4 @@ def nhl_scraper():
         mock.add_date(cached_date)
 
     s.set_endpoint_adapter(mock)
-    yield s
+    return s
