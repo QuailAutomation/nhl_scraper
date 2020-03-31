@@ -2,13 +2,11 @@
 
 import datetime
 import pickle
-
+import pytest
 import json
 import os
 from nhl_scraper import nhl
-import tests.mock_nhl as mock_nhl
-import datetime
-import pytest
+
 
 def test_teams(nhl_scraper):
     df = nhl_scraper.teams()
@@ -57,7 +55,7 @@ def nhl_scraper():
     s = nhl.Scraper()
 
     # Put the mock adapter in so we don't make calls out
-    mock = mock_nhl.MockNhlEndpointAdapter()
+    mock = MockNhlEndpointAdapter()
 
     cached_dates = [datetime.datetime(2018, 1, 14),
                     datetime.datetime(2018, 1, 15),
