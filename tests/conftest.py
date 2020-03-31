@@ -4,7 +4,7 @@ import pytest
 from nhl_scraper import nhl
 import mock_nhl
 import datetime
-
+    
 
 @pytest.fixture
 def nhl_scraper():
