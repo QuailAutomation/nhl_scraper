@@ -220,7 +220,7 @@ class Scraper:
         else:
             raise ValueError("Supported formats are: pandas,json")
 
-    def games(self, /, start_date, end_date):
+    def games(self, start_date, end_date):
         the_games = self._raw_games(startDate=start_date, endDate=end_date)
         t = objectpath.Tree(the_games)
         data = t.execute("$..dates..games.gamePk")
