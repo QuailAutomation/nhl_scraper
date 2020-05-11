@@ -226,7 +226,7 @@ class Scraper:
         data = t.execute("$..dates..games.gamePk")
         return list(data)
 
-    def linescores(self, /,start_date, end_date):
+    def linescores(self, start_date, end_date):
         the_games = self._raw_games(startDate=start_date, endDate=end_date,expand='schedule.linescore')
         t = objectpath.Tree(the_games)
         data = t.execute("$..dates..games")
