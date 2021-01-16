@@ -67,7 +67,7 @@ class Parser:
 
     def parse_name_team(self, td):
         attrs = td.text.strip().split('\n')
-        return [attrs[11].strip(), attrs[6].strip()]
+        return [attrs[13].strip(), attrs[6].strip()]
 
 
 if __name__ == "__main__":
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             if skaters is None:
                 skaters = p.parse(0)
             else:
-                skaters.append(p.parse(len(skaters.index)))
+                skaters = skaters.append(p.parse(len(skaters.index)))
 
     skaters.to_csv("cbssports.skaters.proj.csv")
     goalies.to_csv("cbssports.goalies.proj.csv")
